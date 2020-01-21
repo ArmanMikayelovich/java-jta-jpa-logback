@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="4.0" xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+   http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd">
+
+    <display-name>Web Project</display-name>
+
+    <!--REGISTER SERVLET-->
+    <servlet>
+        <servlet-name>Register</servlet-name>
+        <servlet-class>com.energizeglobal.internship.servlet.Register</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>Register</servlet-name>
+        <url-pattern>/register</url-pattern>
+    </servlet-mapping>
+
+    <!--    LOGIN SERVLET-->
+    <servlet>
+        <servlet-name>Login</servlet-name>
+        <servlet-class>com.energizeglobal.internship.servlet.Login</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>Login</servlet-name>
+        <url-pattern>/login</url-pattern>
+    </servlet-mapping>
+    <!--ADMIN STATE CHANGE SERVLET-->
+    <servlet>
+        <servlet-name>AdminStateChanger</servlet-name>
+        <servlet-class>com.energizeglobal.internship.servlet.AdminStateChanger</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminStateChanger</servlet-name>
+        <url-pattern>/admin/state-changer</url-pattern>
+    </servlet-mapping>
+<!--USER INFO CHANGE SERVLET-->
+    <servlet>
+        <servlet-name>UserInfoChange</servlet-name>
+        <servlet-class>com.energizeglobal.internship.servlet.UserInfoChanger</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>UserInfoChange</servlet-name>
+        <url-pattern>/user/change-user-info</url-pattern>
+    </servlet-mapping>
+<!--    USER CHANGE PASSWORD SERVLET-->
+    <servlet>
+        <servlet-name>ChangePassword</servlet-name>
+        <servlet-class>com.energizeglobal.internship.servlet.ChangePassword</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ChangePassword</servlet-name>
+        <url-pattern>/user/change-password</url-pattern>
+    </servlet-mapping>
+    <!--    DELETE USER-->
+    <servlet>
+        <servlet-name>DeleteUser</servlet-name>
+        <servlet-class>com.energizeglobal.internship.servlet.DeleteUser</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>DeleteUser</servlet-name>
+        <url-pattern>/user/delete</url-pattern>
+    </servlet-mapping>
+<!--    LOGOUT SERVLET-->
+    <servlet>
+        <servlet-name>Logout</servlet-name>
+        <servlet-class>com.energizeglobal.internship.servlet.Logout</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>Logout</servlet-name>
+        <url-pattern>/logout</url-pattern>
+    </servlet-mapping>
+<!--    HOMEPAGE SERVLET-->
+    <servlet-mapping>
+        <servlet-name>default</servlet-name>
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
+
+    <!--AUTHENTICATION FILTER-->
+    <filter>
+        <filter-name>Authentication</filter-name>
+        <filter-class>com.energizeglobal.internship.filter.AuthenticationFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>Authentication</filter-name>
+        <url-pattern>/user/*</url-pattern>
+        <url-pattern>/admin/*</url-pattern>
+    </filter-mapping>
+
+    <!--    ADMIN FILTER-->
+    <filter>
+        <filter-name>AdminFilter</filter-name>
+        <filter-class>com.energizeglobal.internship.filter.AdminFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>AdminFilter</filter-name>
+        <url-pattern>/admin/*</url-pattern>
+    </filter-mapping>
+
+
+    <!--ERROR HANDLING-->
+    <servlet>
+        <servlet-name>ErrorServlet</servlet-name>
+        <servlet-class>com.energizeglobal.internship.servlet.ErrorHandlerServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ErrorServlet</servlet-name>
+        <url-pattern>/error</url-pattern>
+    </servlet-mapping>
+    <error-page>
+        <exception-type>com.energizeglobal.internship.util.exception.InvalidCredentialsException</exception-type>
+        <location>/error</location>
+    </error-page>
+    <error-page>
+        <exception-type>com.energizeglobal.internship.util.exception.IllegalAccessException</exception-type>
+        <location>/error</location>
+    </error-page>
+    <error-page>
+        <exception-type>com.energizeglobal.internship.util.exception.ServerSideException</exception-type>
+        <location>/error</location>
+    </error-page>
+    <error-page>
+        <exception-type>com.energizeglobal.internship.util.exception.UsernameNotFountException</exception-type>
+        <location>/error</location>
+    </error-page>
+
+    <error-page>
+        <exception-type>com.energizeglobal.internship.util.exception.UnAuthenticatedException</exception-type>
+        <location>/error</location>
+    </error-page>
+    <error-page>
+        <exception-type>com.energizeglobal.internship.util.exception.UnAuthorizedException</exception-type>
+        <location>/error</location>
+    </error-page>
+
+    <error-page>
+        <location>/frontErrors.jsp</location>
+    </error-page>
+</web-app>
+
+
