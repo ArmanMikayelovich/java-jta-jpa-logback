@@ -3,6 +3,9 @@ package com.energizeglobal.internship.servlet;
 import com.energizeglobal.internship.dao.UserDao;
 import com.energizeglobal.internship.dao.UserDaoJDBCImpl;
 import com.energizeglobal.internship.model.RegistrationRequest;
+import com.energizeglobal.internship.service.UserService;
+import com.energizeglobal.internship.service.UserServiceWithJTA;
+import com.energizeglobal.internship.util.Context;
 import com.energizeglobal.internship.util.Validator;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,7 +20,8 @@ import java.time.format.DateTimeParseException;
 import java.util.Set;
 @Slf4j
 public class Register extends HttpServlet {
-    private final UserDao userDao = UserDaoJDBCImpl.getInstance();
+    private final UserService userService =  Context.getUserService();
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.sendRedirect("/registration.jsp");
@@ -56,14 +60,14 @@ public class Register extends HttpServlet {
                 req.setAttribute(violation.getPropertyPath().toString(), violation.getMessage());
             }
 
-            if (userDao.isUsernameExists(username)) {
+            if (userService.isUsernameExists(username)) {
                 req.setAttribute("username", "Username already exists");
             }
 
             req.getRequestDispatcher("/registration.jsp").forward(req, resp);
             return;
         }
-        userDao.register(registrationRequest);
+        userService.register(registrationRequest);
         resp.sendRedirect("/login.jsp");
         log.debug("Successfully registered User : " + registrationRequest.toString());
     }

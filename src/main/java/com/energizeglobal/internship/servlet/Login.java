@@ -3,6 +3,9 @@ package com.energizeglobal.internship.servlet;
 import com.energizeglobal.internship.dao.UserDao;
 import com.energizeglobal.internship.dao.UserDaoJDBCImpl;
 import com.energizeglobal.internship.model.LoginRequest;
+import com.energizeglobal.internship.service.UserService;
+import com.energizeglobal.internship.service.UserServiceWithJTA;
+import com.energizeglobal.internship.util.Context;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.ServletException;
@@ -14,7 +17,7 @@ import java.io.IOException;
 
 @Slf4j
 public class Login extends HttpServlet {
-    private final UserDao userDao = UserDaoJDBCImpl.getInstance();
+    private final UserService userService =  Context.getUserService();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -23,7 +26,7 @@ public class Login extends HttpServlet {
         final LoginRequest loginRequest = new LoginRequest(username, password);
 
         log.debug("Requested login with username " + username + "and password " + password);
-        userDao.login(loginRequest);
+        userService.login(loginRequest);
         final HttpSession session = req.getSession(true);
         session.setAttribute("username", username);
         req.getRequestDispatcher("/login.jsp").forward(req, resp);

@@ -1,7 +1,8 @@
 package com.energizeglobal.internship.servlet;
 
-import com.energizeglobal.internship.dao.UserDao;
-import com.energizeglobal.internship.dao.UserDaoJDBCImpl;
+import com.energizeglobal.internship.service.UserService;
+import com.energizeglobal.internship.service.UserServiceWithJTA;
+import com.energizeglobal.internship.util.Context;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.ServletException;
@@ -15,7 +16,7 @@ import java.io.IOException;
  */
 @Slf4j
 public class AdminStateChanger extends HttpServlet {
-    private final UserDao userDao = UserDaoJDBCImpl.getInstance();
+    private final UserService userService =  Context.getUserService();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -23,7 +24,7 @@ public class AdminStateChanger extends HttpServlet {
         final String username = req.getParameter("username");
         final String isAdminString = req.getParameter("isAdmin");
         final boolean isAdmin = Boolean.parseBoolean(isAdminString);
-        userDao.changeAdminState(username, isAdmin);
+        userService.changeAdminState(username, isAdmin);
         resp.sendRedirect("/admin/adminPage.jsp");
     }
 

@@ -1,0 +1,12 @@
+<Resource
+        name="jdbc/mysql"
+        auth="Container"
+        type="javax.sql.DataSource"
+        maxActive="100"
+        maxIdle="30"
+        maxWait="10000"
+        driverClassName="com.mysql.cj.jdbc.Driver"
+        url="jdbc:mysql://localhost/web?createDatabaseIfNotExist=true"
+        username="root"
+        password="root"
+/>

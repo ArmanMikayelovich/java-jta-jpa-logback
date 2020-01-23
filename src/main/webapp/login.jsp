@@ -221,7 +221,7 @@
 <body class="align">
 <% if (request.getSession() != null && request.getSession().getAttribute("username") != null) {
     response.sendRedirect("/user/userPage.jsp");
-}%>}
+}%>
 
 <div class="grid">
     <a style="color: red"><%=request.getParameter("error") != null ? "Invalid Credentials" : "" %>

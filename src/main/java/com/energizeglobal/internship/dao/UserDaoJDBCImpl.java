@@ -4,7 +4,6 @@ import com.energizeglobal.internship.model.LoginRequest;
 import com.energizeglobal.internship.model.RegistrationRequest;
 import com.energizeglobal.internship.model.User;
 import com.energizeglobal.internship.util.DateConverter;
-import com.energizeglobal.internship.util.Properties;
 import com.energizeglobal.internship.util.exception.InvalidCredentialsException;
 import com.energizeglobal.internship.util.exception.ServerSideException;
 import com.energizeglobal.internship.util.exception.UsernameAlreadyExists;
@@ -37,13 +36,6 @@ public class UserDaoJDBCImpl implements UserDao {
     private static final String JDBC_DRIVER = "db.driver";
 
 
-    static {
-        try {
-            Class.forName(Properties.get(JDBC_DRIVER));
-        } catch (ClassNotFoundException e) {
-            log.error("Class not found {}", JDBC_DRIVER);
-        }
-    }
     private static final String REGISTER_QUERY = "INSERT INTO users " +
             "(username, password, birthday, email, country) " +
             "values (?,?,?,?,?)";
@@ -65,9 +57,10 @@ public class UserDaoJDBCImpl implements UserDao {
     private static final String FIND_USER_BY_USERNAME = "SELECT username, birthday, email, country, isAdmin from users WHERE username =?";
 
     @Override
-    public boolean isUsernameExists(String username) {
+    public boolean isUsernameExists(String username, Connection connection) {
+
         log.debug("checking is username exists: {}", username);
-        try (final Connection connection = getConnection()) {
+        try{
             final PreparedStatement preparedStatement = connection.prepareStatement(USERNAME_CHECK_QUERY);
 
             preparedStatement.setString(1, username);
@@ -81,14 +74,13 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     @Override
-    public void register(RegistrationRequest registrationRequest) {
+    public void register(RegistrationRequest registrationRequest, Connection connection) {
         log.debug("trying to register: {}", registrationRequest);
-        if (isUsernameExists(registrationRequest.getUsername())) {
+        if (isUsernameExists(registrationRequest.getUsername(),connection)) {
             throw new UsernameAlreadyExists();
         }
 
-        try (final Connection connection =getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(REGISTER_QUERY);) {
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(REGISTER_QUERY);) {
 
             preparedStatement.setString(1, registrationRequest.getUsername());
             preparedStatement.setString(2, registrationRequest.getPassword());
@@ -105,10 +97,9 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     @Override
-    public User login(LoginRequest loginRequest) throws InvalidCredentialsException {
+    public User login(LoginRequest loginRequest, Connection connection) throws InvalidCredentialsException {
         log.debug("login: {}", loginRequest);
-        try (final Connection connection = getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(LOGIN_QUERY)) {
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(LOGIN_QUERY)) {
 
             preparedStatement.setString(1, loginRequest.getUsername());
             preparedStatement.setString(2, loginRequest.getPassword());
@@ -131,14 +122,13 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     @Override
-    public Boolean isAdmin(String username) {
+    public Boolean isAdmin(String username, Connection connection) {
         log.debug("checking, is user admin: {}", username);
-        if (!isUsernameExists(username)) {
+        if (!isUsernameExists(username,connection)) {
             throw new UsernameNotFountException();
         }
 
-        try (final Connection connection = getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(IS_ADMIN_QUERY)) {
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(IS_ADMIN_QUERY)) {
 
             preparedStatement.setString(1, username);
             @Cleanup ResultSet resultSet = preparedStatement.executeQuery();
@@ -153,33 +143,32 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     @Override
-    public void changeAdminState(String username, boolean adminState) {
+    public void changeAdminState(String username, boolean adminState, Connection connection) throws SQLException {
         log.debug("changing admin state of user: {}", username);
-        if (!isUsernameExists(username)) {
+        if (!isUsernameExists(username,connection)) {
             throw new UsernameNotFountException();
         }
-        try (final Connection connection = getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(CHANGE_ADMIN_QUERY)) {
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(CHANGE_ADMIN_QUERY)) {
 
             preparedStatement.setBoolean(1, adminState);
             preparedStatement.setString(2, username);
             preparedStatement.execute();
-
+            connection.commit();
         } catch (SQLException e) {
+            connection.close();
             log.error("An error occurred in admin state changing process: {}", e.getSQLState());
             throw new ServerSideException();
         }
     }
 
     @Override
-    public void updatePassword(LoginRequest userCredentials, String newPassword) throws InvalidCredentialsException {
+    public void updatePassword(LoginRequest userCredentials, String newPassword, Connection connection) throws InvalidCredentialsException {
         log.debug("changing password for {}", userCredentials.getUsername());
-        if (!isUsernameExists(userCredentials.getUsername())) {
+        if (!isUsernameExists(userCredentials.getUsername(),connection)) {
             throw new UsernameNotFountException();
         }
 
-        try (final Connection connection = getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(GET_PASSWORD)) {
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(GET_PASSWORD)) {
 
             preparedStatement.setString(1, userCredentials.getUsername());
             final ResultSet resultSet = preparedStatement.executeQuery();
@@ -203,13 +192,12 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     @Override
-    public void updateUserInfo(User user) {
+    public void updateUserInfo(User user, Connection connection) {
         log.debug("updating user info: {}", user.getUsername());
-        if (!isUsernameExists(user.getUsername())) {
+        if (!isUsernameExists(user.getUsername(),connection)) {
             throw new UsernameNotFountException();
         }
-        try (final Connection connection = getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_USER);) {
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_USER);) {
 
 
             preparedStatement.setDate(1, convertLocalDateToSqlDate(user.getBirthday()));
@@ -225,13 +213,12 @@ public class UserDaoJDBCImpl implements UserDao {
 
 
     @Override
-    public User findByUsername(String username) {
+    public User findByUsername(String username, Connection connection) {
         log.debug("searching user by username: {}", username);
-        if (!isUsernameExists(username)) {
+        if (!isUsernameExists(username,connection)) {
             throw new UsernameNotFountException();
         }
-        try (final Connection connection = getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(FIND_USER_BY_USERNAME)) {
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(FIND_USER_BY_USERNAME)) {
 
             preparedStatement.setString(1, username);
             @Cleanup final ResultSet resultSet = preparedStatement.executeQuery();
@@ -253,12 +240,11 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     @Override
-    public List<User> findAll() {
+    public List<User> findAll(Connection connection) {
         log.debug("find all users id db");
         final List<User> users = new ArrayList<>();
 
-        try (final Connection connection = getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL_USERS)) {
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL_USERS)) {
 
             @Cleanup ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -279,14 +265,13 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     @Override
-    public void remove(String username) {
+    public void remove(String username, Connection connection) {
         log.debug("deleting user: {}", username);
-        if (!isUsernameExists(username)) {
+        if (!isUsernameExists(username,connection)) {
             throw new UsernameNotFountException();
         }
 
-        try (final Connection connection = getConnection();
-             final PreparedStatement preparedStatement
+        try (final PreparedStatement preparedStatement
                      = connection.prepareStatement(DELETE_QUERY)) {
             preparedStatement.setString(1, username);
             preparedStatement.execute();
@@ -295,13 +280,5 @@ public class UserDaoJDBCImpl implements UserDao {
             log.error("An error occurred in login process: {}", e.getSQLState());
             throw new ServerSideException();
         }
-    }
-
-
-    private Connection getConnection() throws SQLException {
-        final String dBURL = Properties.get(DB_URL);
-        final String dBUsername = Properties.get(USERNAME);
-        final String dBPassword = Properties.get(PASSWORD);
-        return DriverManager.getConnection(dBURL, dBUsername, dBPassword);
     }
 }

@@ -3,6 +3,9 @@ package com.energizeglobal.internship.servlet;
 import com.energizeglobal.internship.dao.UserDao;
 import com.energizeglobal.internship.dao.UserDaoJDBCImpl;
 import com.energizeglobal.internship.model.User;
+import com.energizeglobal.internship.service.UserService;
+import com.energizeglobal.internship.service.UserServiceWithJTA;
+import com.energizeglobal.internship.util.Context;
 import com.energizeglobal.internship.util.Validator;
 import com.energizeglobal.internship.util.exception.IllegalAccessException;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +21,7 @@ import java.time.format.DateTimeParseException;
 import java.util.Set;
 @Slf4j
 public class UserInfoChanger extends HttpServlet {
-    private final UserDao userDao = UserDaoJDBCImpl.getInstance();
+    private final UserService userService = Context.getUserService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -30,7 +33,7 @@ public class UserInfoChanger extends HttpServlet {
         final String username = req.getParameter("username");
         log.debug("trying to change {} info",username);
 
-        if (!userDao.isAdmin(username)) {
+        if (!userService.isAdmin(username)) {
             final String loggedInUsername = (String) req.getSession().getAttribute("username");
             if (!username.equals(loggedInUsername)) {
                 throw new IllegalAccessException();
@@ -56,16 +59,16 @@ public class UserInfoChanger extends HttpServlet {
                 req.setAttribute(violation.getPropertyPath().toString(), violation.getMessage());
             }
 
-            if (userDao.isUsernameExists(username)) {
+            if (userService.isUsernameExists(username)) {
                 req.setAttribute("username", "Username already exists");
             }
             req.getRequestDispatcher("/user/changeUser.jsp").forward(req, resp);
             log.debug("cant change user {} info.",username);
             return;
         }
-        userDao.updateUserInfo(userToUpdate);
+        userService.updateUserInfo(userToUpdate);
         log.debug("user {} info changed.",username);
-        if (userDao.isAdmin(username)) {
+        if (userService.isAdmin(username)) {
             resp.sendRedirect("/admin/adminPage.jsp");
         } else {
             resp.sendRedirect("/user/userPage.jsp");

@@ -1,6 +1,9 @@
 <%@ page import="com.energizeglobal.internship.dao.UserDao" %>
 <%@ page import="com.energizeglobal.internship.dao.UserDaoJDBCImpl" %>
 <%@ page import="com.energizeglobal.internship.model.User" %>
+<%@ page import="com.energizeglobal.internship.service.UserService" %>
+<%@ page import="com.energizeglobal.internship.service.UserServiceWithJTA" %>
+<%@ page import="com.energizeglobal.internship.util.Context" %>
 
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
@@ -11,8 +14,8 @@
 
 </head>
 <body>
-<%! UserDao userDao =  UserDaoJDBCImpl.getInstance();%>
-<% User user = userDao.findByUsername((String) session.getAttribute("username"));%>
+<%! UserService userService =   Context.getUserService();%>
+<% User user = userService.findByUsername((String) session.getAttribute("username"));%>
 <table>
     <tr>
         <th>Username</th>
@@ -35,7 +38,7 @@
     </tr>
 
 </table>
-<% if (userDao.isAdmin((String) session.getAttribute("username"))) {%>
+<% if (userService.isAdmin((String) session.getAttribute("username"))) {%>
     <a href="../admin/adminPage.jsp">Admin panel</a>
 <% } %>
 <form action="${pageContext.request.contextPath}/user/changeUser.jsp" method="post">

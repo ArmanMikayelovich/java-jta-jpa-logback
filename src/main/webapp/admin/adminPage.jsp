@@ -1,6 +1,9 @@
 <%@ page import="com.energizeglobal.internship.model.User" %>
 <%@ page import="com.energizeglobal.internship.dao.UserDao" %>
 <%@ page import="com.energizeglobal.internship.dao.UserDaoJDBCImpl" %>
+<%@ page import="com.energizeglobal.internship.service.UserService" %>
+<%@ page import="com.energizeglobal.internship.service.UserServiceWithJTA" %>
+<%@ page import="com.energizeglobal.internship.util.Context" %>
 
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
@@ -8,7 +11,7 @@
     <title>Welcome Admin - <%=session.getAttribute("username")%></title>
 </head>
 <body>
-<%! UserDao userDao =  UserDaoJDBCImpl.getInstance();%>
+<%! UserService userService =   Context.getUserService();%>
 <table>
     <tr>
         <th>Username</th>
@@ -17,7 +20,7 @@
         <th>Country</th>
         <th>Is admin</th>
     </tr>
-    <% for(User user : userDao.findAll()) { %>
+    <% for(User user : userService.findAll()) { %>
     <tr>
         <td><%=user.getUsername()%></td>
         <td><%=user.getBirthday().toString()%></td>
