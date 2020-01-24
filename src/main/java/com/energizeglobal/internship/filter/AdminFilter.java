@@ -1,10 +1,7 @@
 package com.energizeglobal.internship.filter;
 
-import com.energizeglobal.internship.dao.UserDao;
-import com.energizeglobal.internship.dao.UserDaoJDBCImpl;
 import com.energizeglobal.internship.service.UserService;
 import com.energizeglobal.internship.service.UserServiceWithJTA;
-import com.energizeglobal.internship.util.Context;
 import com.energizeglobal.internship.util.exception.UnAuthorizedException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,7 +14,7 @@ import java.io.IOException;
  */
 @Slf4j
 public class AdminFilter implements Filter {
-    private final UserService userService =  Context.getUserService();;
+    private final UserService userService = UserServiceWithJTA.getInstance();
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {

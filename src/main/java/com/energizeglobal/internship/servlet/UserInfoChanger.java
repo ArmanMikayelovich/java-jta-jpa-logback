@@ -1,11 +1,8 @@
 package com.energizeglobal.internship.servlet;
 
-import com.energizeglobal.internship.dao.UserDao;
-import com.energizeglobal.internship.dao.UserDaoJDBCImpl;
 import com.energizeglobal.internship.model.User;
 import com.energizeglobal.internship.service.UserService;
 import com.energizeglobal.internship.service.UserServiceWithJTA;
-import com.energizeglobal.internship.util.Context;
 import com.energizeglobal.internship.util.Validator;
 import com.energizeglobal.internship.util.exception.IllegalAccessException;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +18,7 @@ import java.time.format.DateTimeParseException;
 import java.util.Set;
 @Slf4j
 public class UserInfoChanger extends HttpServlet {
-    private final UserService userService = Context.getUserService();
+    private final UserService userService= UserServiceWithJTA.getInstance();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {

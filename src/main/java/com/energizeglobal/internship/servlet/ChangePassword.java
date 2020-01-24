@@ -1,10 +1,8 @@
 package com.energizeglobal.internship.servlet;
 
-import com.energizeglobal.internship.dao.UserDaoJDBCImpl;
 import com.energizeglobal.internship.model.LoginRequest;
 import com.energizeglobal.internship.service.UserService;
 import com.energizeglobal.internship.service.UserServiceWithJTA;
-import com.energizeglobal.internship.util.Context;
 import com.energizeglobal.internship.util.exception.InvalidCredentialsException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -16,7 +14,7 @@ import java.io.IOException;
 
 @Slf4j
 public class ChangePassword extends HttpServlet {
-    private final UserService userService = Context.getUserService();
+    private final UserService userService =UserServiceWithJTA.getInstance();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {

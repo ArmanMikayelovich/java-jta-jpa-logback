@@ -2,7 +2,6 @@ package com.energizeglobal.internship.servlet;
 
 import com.energizeglobal.internship.service.UserService;
 import com.energizeglobal.internship.service.UserServiceWithJTA;
-import com.energizeglobal.internship.util.Context;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.ServletException;
@@ -16,7 +15,7 @@ import java.io.IOException;
  */
 @Slf4j
 public class AdminStateChanger extends HttpServlet {
-    private final UserService userService =  Context.getUserService();
+    private final UserService userService = UserServiceWithJTA.getInstance();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {

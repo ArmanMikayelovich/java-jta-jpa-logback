@@ -3,7 +3,7 @@
 <%@ page import="com.energizeglobal.internship.dao.UserDaoJDBCImpl" %>
 <%@ page import="com.energizeglobal.internship.service.UserService" %>
 <%@ page import="com.energizeglobal.internship.service.UserServiceWithJTA" %>
-<%@ page import="com.energizeglobal.internship.util.Context" %>
+<%@ page import="com.energizeglobal.internship.util.CustomContext" %>
 
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
@@ -11,7 +11,7 @@
     <title>Welcome Admin - <%=session.getAttribute("username")%></title>
 </head>
 <body>
-<%! UserService userService =   Context.getUserService();%>
+<%! UserService userService =  UserServiceWithJTA.getInstance();%>
 <table>
     <tr>
         <th>Username</th>

@@ -3,7 +3,7 @@
 <%@ page import="com.energizeglobal.internship.model.User" %>
 <%@ page import="com.energizeglobal.internship.service.UserService" %>
 <%@ page import="com.energizeglobal.internship.service.UserServiceWithJTA" %>
-<%@ page import="com.energizeglobal.internship.util.Context" %>
+<%@ page import="com.energizeglobal.internship.util.CustomContext" %>
 
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
@@ -14,7 +14,7 @@
 
 </head>
 <body>
-<%! UserService userService =   Context.getUserService();%>
+<%! UserService userService =  UserServiceWithJTA.getInstance();%>
 <% User user = userService.findByUsername((String) session.getAttribute("username"));%>
 <table>
     <tr>

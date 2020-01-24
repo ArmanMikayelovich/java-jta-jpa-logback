@@ -1,13 +1,16 @@
 package com.energizeglobal.internship.servlet;
 
-import com.energizeglobal.internship.dao.UserDao;
-import com.energizeglobal.internship.dao.UserDaoJDBCImpl;
 import com.energizeglobal.internship.model.LoginRequest;
 import com.energizeglobal.internship.service.UserService;
 import com.energizeglobal.internship.service.UserServiceWithJTA;
-import com.energizeglobal.internship.util.Context;
+import com.energizeglobal.internship.util.CustomContext;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.annotation.ManagedBean;
+import javax.annotation.Resource;
+import javax.ejb.EJB;
+import javax.ejb.Stateless;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -16,8 +19,10 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
 @Slf4j
+@Data
 public class Login extends HttpServlet {
-    private final UserService userService =  Context.getUserService();
+    @EJB
+    UserService userService;
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {

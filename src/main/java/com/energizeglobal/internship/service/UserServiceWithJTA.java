@@ -6,11 +6,11 @@ import com.energizeglobal.internship.model.LoginRequest;
 import com.energizeglobal.internship.model.RegistrationRequest;
 import com.energizeglobal.internship.model.User;
 import com.energizeglobal.internship.util.exception.ServerSideException;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Resource;
 import javax.ejb.*;
-import javax.inject.Named;
 import javax.sql.DataSource;
 import javax.transaction.*;
 import java.sql.Connection;
@@ -18,21 +18,22 @@ import java.sql.SQLException;
 import java.util.List;
 
 @Slf4j
-@Singleton
+@Data
 @TransactionManagement(TransactionManagementType.BEAN)
-@TransactionAttribute(TransactionAttributeType.REQUIRED)
-public class UserServiceWithJTA implements UserService {
-//    private static UserService userService = new UserServiceWithJTA();
-//
-//    public static UserService getInstance() {
-//        return userService;
-//    }
+@Stateless
+public class UserServiceWithJTA implements UserService
+{
+    private static UserService userService = new UserServiceWithJTA();
+
+    public static UserService getInstance() {
+        return null;
+    }
 
     @Resource
-    private UserTransaction tx;
+    UserTransaction tx;
 
-    @Resource(name = "jdbc/mysql")
-    private DataSource mySqlDataSource;
+    @Resource(name = "jdbc/MySql")
+    DataSource mySqlDataSource;
 
     private final UserDao userDao = UserDaoJDBCImpl.getInstance();
 
