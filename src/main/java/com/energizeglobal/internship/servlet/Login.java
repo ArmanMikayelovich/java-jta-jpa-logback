@@ -30,7 +30,7 @@ public class Login extends HttpServlet {
         final String password = req.getParameter("password");
         final LoginRequest loginRequest = new LoginRequest(username, password);
 
-        log.debug("Requested login with username " + username + "and password " + password);
+        log.debug("Requested login with username " + username + " and password " + password);
         userService.login(loginRequest);
         final HttpSession session = req.getSession(true);
         session.setAttribute("username", username);

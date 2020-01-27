@@ -1,16 +1,19 @@
 package com.energizeglobal.internship.service;
 
 import com.energizeglobal.internship.dao.UserDao;
-import com.energizeglobal.internship.dao.UserDaoJDBCImpl;
 import com.energizeglobal.internship.model.LoginRequest;
 import com.energizeglobal.internship.model.RegistrationRequest;
 import com.energizeglobal.internship.model.User;
+import com.energizeglobal.internship.util.DSUtil;
 import com.energizeglobal.internship.util.exception.ServerSideException;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Resource;
-import javax.ejb.*;
+import javax.ejb.EJB;
+import javax.ejb.Stateless;
+import javax.ejb.TransactionManagement;
+import javax.ejb.TransactionManagementType;
 import javax.sql.DataSource;
 import javax.transaction.*;
 import java.sql.Connection;
@@ -21,8 +24,7 @@ import java.util.List;
 @Data
 @TransactionManagement(TransactionManagementType.BEAN)
 @Stateless
-public class UserServiceWithJTA implements UserService
-{
+public class UserServiceWithJTA implements UserService {
     private static UserService userService = new UserServiceWithJTA();
 
     public static UserService getInstance() {
@@ -32,10 +34,10 @@ public class UserServiceWithJTA implements UserService
     @Resource
     UserTransaction tx;
 
-    @Resource(name = "jdbc/MySql")
-    DataSource mySqlDataSource;
+    @EJB
+    UserDao userDao;
 
-    private final UserDao userDao = UserDaoJDBCImpl.getInstance();
+    DataSource mySqlDataSource = DSUtil.getDataSource();
 
 
     @Override
@@ -91,6 +93,7 @@ public class UserServiceWithJTA implements UserService
         try {
             tx.begin();
             try (Connection connection = getConnection()) {
+                connection.setAutoCommit(false);
                 final User user = userDao.login(loginRequest, connection);
                 connection.commit();
                 tx.commit();

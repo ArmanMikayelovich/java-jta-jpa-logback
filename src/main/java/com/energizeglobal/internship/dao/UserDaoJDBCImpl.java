@@ -11,6 +11,7 @@ import com.energizeglobal.internship.util.exception.UsernameNotFountException;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.ejb.Stateless;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import static com.energizeglobal.internship.util.DateConverter.convertDateToLoca
 import static com.energizeglobal.internship.util.DateConverter.convertLocalDateToSqlDate;
 
 @Slf4j
+@Stateless
 public class UserDaoJDBCImpl implements UserDao {
     private static UserDaoJDBCImpl userDaoJDBC = new UserDaoJDBCImpl();
 

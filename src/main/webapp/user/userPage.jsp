@@ -4,6 +4,7 @@
 <%@ page import="com.energizeglobal.internship.service.UserService" %>
 <%@ page import="com.energizeglobal.internship.service.UserServiceWithJTA" %>
 <%@ page import="com.energizeglobal.internship.util.CustomContext" %>
+<%@ page import="javax.ejb.EJB" %>
 
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
@@ -14,7 +15,7 @@
 
 </head>
 <body>
-<%! UserService userService =  UserServiceWithJTA.getInstance();%>
+<%! @EJB UserService userService;%>
 <% User user = userService.findByUsername((String) session.getAttribute("username"));%>
 <table>
     <tr>
