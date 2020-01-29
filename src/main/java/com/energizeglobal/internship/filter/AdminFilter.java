@@ -14,7 +14,7 @@ import java.io.IOException;
  */
 @Slf4j
 public class AdminFilter implements Filter {
-    private final UserService userService = UserServiceWithJTA.getInstance();
+    private final UserService userService = UserService.getInstance();
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {

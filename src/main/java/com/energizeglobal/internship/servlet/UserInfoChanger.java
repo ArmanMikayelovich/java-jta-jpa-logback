@@ -18,11 +18,11 @@ import java.time.format.DateTimeParseException;
 import java.util.Set;
 @Slf4j
 public class UserInfoChanger extends HttpServlet {
-    private final UserService userService= UserServiceWithJTA.getInstance();
+    private final UserService userService= UserService.getInstance();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.sendRedirect("/user/userPage.jsp");
+        resp.sendRedirect(req.getContextPath()+"/user/userPage.jsp");
     }
 
     @Override
@@ -66,9 +66,9 @@ public class UserInfoChanger extends HttpServlet {
         userService.updateUserInfo(userToUpdate);
         log.debug("user {} info changed.",username);
         if (userService.isAdmin(username)) {
-            resp.sendRedirect("/admin/adminPage.jsp");
+            resp.sendRedirect(req.getContextPath()+"/admin/adminPage.jsp");
         } else {
-            resp.sendRedirect("/user/userPage.jsp");
+            resp.sendRedirect(req.getContextPath()+"/user/userPage.jsp");
         }
     }
 }

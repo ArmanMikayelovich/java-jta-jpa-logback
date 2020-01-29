@@ -13,7 +13,7 @@ public class Logout extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         log.debug("{} logout.", req.getSession().getAttribute("username"));
         req.getSession().invalidate();
-        resp.sendRedirect("/");
+        resp.sendRedirect(req.getContextPath()+"/");
 
     }
 }

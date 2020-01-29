@@ -26,7 +26,7 @@
     </label>
     <br/>
     <label>
-        new password
+        New password
         <input type="password" name="newPassword">
         <error><%= request.getAttribute("newPassword") != null ? request.getAttribute("newPassword") : "" %>
         </error>

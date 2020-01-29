@@ -12,23 +12,23 @@ import java.util.List;
 public interface UserDao {
 
 
-    boolean isUsernameExists(String username, Connection connection);
+    boolean isUsernameExists(String username );
 
-    void register(RegistrationRequest registrationRequest, Connection connection);
+    void register(RegistrationRequest registrationRequest);
 
-    User login(LoginRequest loginRequest, Connection connection) throws InvalidCredentialsException;
+    User login(LoginRequest loginRequest) throws InvalidCredentialsException;
 
-    Boolean isAdmin(String username, Connection connection);
+    Boolean isAdmin(String username);
 
-    void changeAdminState(String username, boolean adminState, Connection connection) throws SQLException;
+    void changeAdminState(String username, boolean adminState) throws SQLException;
 
-    void updatePassword(LoginRequest userCredentials, String newPassword, Connection connection) throws InvalidCredentialsException;
+    void updatePassword(LoginRequest userCredentials, String newPassword) throws InvalidCredentialsException;
 
-    void updateUserInfo(User user, Connection connection);
+    void updateUserInfo(User user);
 
-    User findByUsername(String username, Connection connection);
+    User findByUsername(String username);
 
-    List<User> findAll(Connection connection);
+    List<User> findAll();
 
-    void remove(String username, Connection connection);
+    void remove(String username);
 }

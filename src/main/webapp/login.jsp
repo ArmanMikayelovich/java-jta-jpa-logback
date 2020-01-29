@@ -220,7 +220,7 @@
 </head>
 <body class="align">
 <% if (request.getSession() != null && request.getSession().getAttribute("username") != null) {
-    response.sendRedirect("/user/userPage.jsp");
+    response.sendRedirect(request.getContextPath()+"/user/userPage.jsp");
 }%>
 
 <div class="grid">
@@ -252,7 +252,7 @@
         </div>
     </form>
 
-    <p class="text--center">Not a member? <a href="/registration.jsp">Sign up now</a>
+    <p class="text--center">Not a member? <a href="${pageContext.request.contextPath}/registration.jsp">Sign up now</a>
         <svg class="icon">
             <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="assets/images/icons.svg#arrow-right"></use>
         </svg>

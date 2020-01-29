@@ -4,7 +4,6 @@ import com.energizeglobal.internship.dao.UserDao;
 import com.energizeglobal.internship.model.LoginRequest;
 import com.energizeglobal.internship.model.RegistrationRequest;
 import com.energizeglobal.internship.model.User;
-import com.energizeglobal.internship.util.DSUtil;
 import com.energizeglobal.internship.util.exception.ServerSideException;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +13,6 @@ import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
-import javax.sql.DataSource;
 import javax.transaction.*;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -23,13 +21,8 @@ import java.util.List;
 @Slf4j
 @Data
 @TransactionManagement(TransactionManagementType.BEAN)
-@Stateless
+@Stateless(name = "userService")
 public class UserServiceWithJTA implements UserService {
-    private static UserService userService = new UserServiceWithJTA();
-
-    public static UserService getInstance() {
-        return null;
-    }
 
     @Resource
     UserTransaction tx;
@@ -37,22 +30,18 @@ public class UserServiceWithJTA implements UserService {
     @EJB
     UserDao userDao;
 
-    DataSource mySqlDataSource = DSUtil.getDataSource();
-
 
     @Override
     public boolean isUsernameExists(String username) {
         log.debug("starting transaction for checking is username exists");
         try {
             tx.begin();
-            try (Connection connection = getConnection()) {
-                boolean usernameExists = userDao.isUsernameExists(username, connection);
-                connection.commit();
+                boolean usernameExists = userDao.isUsernameExists(username);
                 tx.commit();
                 log.debug("transaction successfully finished");
                 return usernameExists;
-            }
-        } catch (NotSupportedException | SystemException | SQLException | ServerSideException
+
+        } catch (NotSupportedException | SystemException  | ServerSideException
                 | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
             log.debug("error in transaction.");
             try {
@@ -69,13 +58,13 @@ public class UserServiceWithJTA implements UserService {
     public void register(RegistrationRequest registrationRequest) {
         try {
             tx.begin();
-            try (Connection connection = getConnection()) {
-                userDao.register(registrationRequest, connection);
-                connection.commit();
+
+                userDao.register(registrationRequest);
+
                 tx.commit();
                 log.debug("transaction successfully finished");
-            }
-        } catch (NotSupportedException | SystemException | SQLException | ServerSideException |
+
+        } catch (NotSupportedException | SystemException | ServerSideException |
                 RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
             log.debug("error in transaction.");
             try {
@@ -92,15 +81,14 @@ public class UserServiceWithJTA implements UserService {
         log.debug("starting transaction for login processing");
         try {
             tx.begin();
-            try (Connection connection = getConnection()) {
-                connection.setAutoCommit(false);
-                final User user = userDao.login(loginRequest, connection);
-                connection.commit();
+
+                final User user = userDao.login(loginRequest);
+
                 tx.commit();
                 log.debug("transaction successfully finished");
                 return user;
-            }
-        } catch (NotSupportedException | SystemException | SQLException | ServerSideException
+
+        } catch (NotSupportedException | SystemException | ServerSideException
                 | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
             log.debug("error in transaction.");
             try {
@@ -117,14 +105,13 @@ public class UserServiceWithJTA implements UserService {
         log.debug("starting transaction for checking user's isAdmin ");
         try {
             tx.begin();
-            try (Connection connection = getConnection()) {
-                final Boolean isAdmin = userDao.isAdmin(username, connection);
-                connection.commit();
-                tx.commit();
-                log.debug("transaction successfully finished");
-                return isAdmin;
-            }
-        } catch (NotSupportedException | SystemException | SQLException | ServerSideException
+
+            final Boolean isAdmin = userDao.isAdmin(username);
+            tx.commit();
+            log.debug("transaction successfully finished");
+            return isAdmin;
+
+        } catch (NotSupportedException | SystemException | ServerSideException
                 | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
             log.debug("error in transaction.");
             try {
@@ -141,12 +128,9 @@ public class UserServiceWithJTA implements UserService {
         log.debug("starting transaction for changing admin state");
         try {
             tx.begin();
-            try (Connection connection = getConnection()) {
-                userDao.changeAdminState(username, adminState, connection);
-                connection.commit();//TODO check connection's autoCommit flag
-                tx.commit();
-                log.debug("transaction successfully finished");
-            }
+            userDao.changeAdminState(username, adminState);
+            tx.commit();
+            log.debug("transaction successfully finished");
         } catch (NotSupportedException | SystemException | SQLException | ServerSideException
                 | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
             log.debug("error in transaction.");
@@ -164,13 +148,11 @@ public class UserServiceWithJTA implements UserService {
         log.debug("starting transaction for update password");
         try {
             tx.begin();
-            try (Connection connection = getConnection()) {
-                userDao.updatePassword(userCredentials, newPassword, connection);
-                connection.commit();
-                tx.commit();
-                log.debug("transaction successfully finished");
-            }
-        } catch (NotSupportedException | SystemException | SQLException | ServerSideException
+            userDao.updatePassword(userCredentials, newPassword);
+            tx.commit();
+            log.debug("transaction successfully finished");
+
+        } catch (NotSupportedException | SystemException | ServerSideException
                 | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
             log.debug("error in transaction.");
             try {
@@ -187,13 +169,10 @@ public class UserServiceWithJTA implements UserService {
         log.debug("starting transaction for update user info");
         try {
             tx.begin();
-            try (Connection connection = getConnection()) {
-                userDao.updateUserInfo(user, connection);
-                connection.commit();
-                tx.commit();
-                log.debug("transaction successfully finished");
-            }
-        } catch (NotSupportedException | SystemException | SQLException | ServerSideException
+            userDao.updateUserInfo(user);
+            tx.commit();
+            log.debug("transaction successfully finished");
+        } catch (NotSupportedException | SystemException | ServerSideException
                 | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
             log.debug("error in transaction.");
             try {
@@ -210,14 +189,12 @@ public class UserServiceWithJTA implements UserService {
         log.debug("starting transaction for getting all users");
         try {
             tx.begin();
-            try (Connection connection = getConnection()) {
-                final List<User> allUsers = userDao.findAll(connection);
-                connection.commit();
-                tx.commit();
-                log.debug("transaction successfully finished");
-                return allUsers;
-            }
-        } catch (NotSupportedException | SystemException | SQLException | ServerSideException
+            final List<User> allUsers = userDao.findAll();
+            tx.commit();
+            log.debug("transaction successfully finished");
+            return allUsers;
+
+        } catch (NotSupportedException | SystemException | ServerSideException
                 | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
             log.debug("error in transaction.");
             try {
@@ -234,14 +211,12 @@ public class UserServiceWithJTA implements UserService {
         log.debug("starting transaction for finding by username");
         try {
             tx.begin();
-            try (Connection connection = getConnection()) {
-                final User user = userDao.findByUsername(username, connection);
-                connection.commit();
-                tx.commit();
-                log.debug("transaction successfully finished");
-                return user;
-            }
-        } catch (NotSupportedException | SystemException | SQLException | ServerSideException
+            final User user = userDao.findByUsername(username);
+            tx.commit();
+            log.debug("transaction successfully finished");
+            return user;
+
+        } catch (NotSupportedException | SystemException | ServerSideException
                 | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
             log.debug("error in transaction.");
             try {
@@ -258,14 +233,11 @@ public class UserServiceWithJTA implements UserService {
         log.debug("starting transaction for finding by username");
         try {
             tx.begin();
-            try (Connection connection = getConnection()) {
-                userDao.remove(username, connection);
-                connection.commit();
-                tx.commit();
-                log.debug("transaction successfully finished");
-                ;
-            }
-        } catch (NotSupportedException | SystemException | SQLException | ServerSideException
+            userDao.remove(username);
+            tx.commit();
+            log.debug("transaction successfully finished");
+
+        } catch (NotSupportedException | SystemException | ServerSideException
                 | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
             log.debug("error in transaction.");
             try {
@@ -277,7 +249,5 @@ public class UserServiceWithJTA implements UserService {
         }
     }
 
-    private Connection getConnection() throws SQLException {
-        return mySqlDataSource.getConnection();
-    }
+
 }

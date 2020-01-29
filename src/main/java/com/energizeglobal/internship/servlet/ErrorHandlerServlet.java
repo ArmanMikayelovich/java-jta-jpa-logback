@@ -4,6 +4,8 @@ import com.energizeglobal.internship.util.exception.IllegalAccessException;
 import com.energizeglobal.internship.util.exception.*;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.ejb.EJBTransactionRolledbackException;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -26,15 +28,21 @@ public class ErrorHandlerServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        final Class<? extends Throwable> exceptionClass =
-                (Class<? extends Throwable>) req.getAttribute("javax.servlet.error.exception_type");
+        Throwable throwable = (Throwable) req.getAttribute(RequestDispatcher.ERROR_EXCEPTION);
+        final Class<? extends Throwable> exceptionClass;
+        if (throwable instanceof EJBTransactionRolledbackException) {
+            exceptionClass = throwable.getCause().getClass();
+        } else {
+            exceptionClass = (Class<? extends Throwable>) req.getAttribute("javax.servlet.error.exception_type");
+        }
+
         if (exceptionClass != null) {
 
             if (exceptionClass.equals(InvalidCredentialsException.class)) {
 
                 log.debug("Handled InvalidCredentialsException and redirected to /login.jsp?error=true");
                 resp.setStatus(BAD_REQUEST);
-                req.getRequestDispatcher("/frontErrors.jsp").forward(req, resp);
+                req.getRequestDispatcher(req.getContextPath() + "/frontErrors.jsp").forward(req, resp);
                 log.debug(exceptionClass.toString() + " handled");
 
             } else if (exceptionClass.equals(IllegalAccessException.class)) {

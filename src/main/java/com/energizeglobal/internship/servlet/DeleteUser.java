@@ -12,7 +12,7 @@ import java.io.IOException;
 
 @Slf4j
 public class DeleteUser extends HttpServlet {
-    private final UserService userService = UserServiceWithJTA.getInstance();;
+    private final UserService userService = UserService.getInstance();;
 
 
     @Override
@@ -23,11 +23,11 @@ public class DeleteUser extends HttpServlet {
         if (loggedInUsername.equalsIgnoreCase(deletingUsername)) {
             userService.remove(deletingUsername);
             req.getSession().invalidate();
-            resp.sendRedirect("/");
+            resp.sendRedirect(req.getContextPath()+"/");
             log.debug(" user deleted {}", deletingUsername);
         } else if (userService.isAdmin(loggedInUsername)) {
             userService.remove(deletingUsername);
-            resp.sendRedirect("/admin/adminPage.jsp");
+            resp.sendRedirect(req.getContextPath()+"/admin/adminPage.jsp");
         } else {
             log.debug(" cant delete user {}", deletingUsername);
             throw new IllegalAccessException();

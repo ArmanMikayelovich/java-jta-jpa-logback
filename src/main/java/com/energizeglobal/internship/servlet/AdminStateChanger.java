@@ -15,7 +15,7 @@ import java.io.IOException;
  */
 @Slf4j
 public class AdminStateChanger extends HttpServlet {
-    private final UserService userService = UserServiceWithJTA.getInstance();
+    private final UserService userService = UserService.getInstance();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -24,12 +24,12 @@ public class AdminStateChanger extends HttpServlet {
         final String isAdminString = req.getParameter("isAdmin");
         final boolean isAdmin = Boolean.parseBoolean(isAdminString);
         userService.changeAdminState(username, isAdmin);
-        resp.sendRedirect("/admin/adminPage.jsp");
+        resp.sendRedirect(req.getContextPath()+"/admin/adminPage.jsp");
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         log.debug("redirected from AdminStateChanger servlet to /admin/adminPage.js");
-        resp.sendRedirect("/admin/adminPage.jsp");
+        resp.sendRedirect(req.getContextPath()+"/admin/adminPage.jsp");
     }
 }

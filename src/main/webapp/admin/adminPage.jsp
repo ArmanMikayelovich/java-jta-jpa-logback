@@ -11,7 +11,7 @@
     <title>Welcome Admin - <%=session.getAttribute("username")%></title>
 </head>
 <body>
-<%! UserService userService =  UserServiceWithJTA.getInstance();%>
+<%! UserService userService =  UserService.getInstance();%>
 <table>
     <tr>
         <th>Username</th>

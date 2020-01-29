@@ -3,6 +3,7 @@ package com.energizeglobal.internship.dao;
 import com.energizeglobal.internship.model.LoginRequest;
 import com.energizeglobal.internship.model.RegistrationRequest;
 import com.energizeglobal.internship.model.User;
+import com.energizeglobal.internship.util.DSUtil;
 import com.energizeglobal.internship.util.DateConverter;
 import com.energizeglobal.internship.util.exception.InvalidCredentialsException;
 import com.energizeglobal.internship.util.exception.ServerSideException;
@@ -12,6 +13,7 @@ import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ejb.Stateless;
+import javax.sql.DataSource;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -23,14 +25,12 @@ import static com.energizeglobal.internship.util.DateConverter.convertLocalDateT
 @Slf4j
 @Stateless
 public class UserDaoJDBCImpl implements UserDao {
-    private static UserDaoJDBCImpl userDaoJDBC = new UserDaoJDBCImpl();
 
     private UserDaoJDBCImpl() {
     }
 
-    public static UserDaoJDBCImpl getInstance() {
-        return userDaoJDBC;
-    }
+    DataSource mySqlDataSource = DSUtil.getDataSource();
+
 
     private static final String DB_URL = "db.url";
     private static final String USERNAME = "db.username";
@@ -59,26 +59,33 @@ public class UserDaoJDBCImpl implements UserDao {
     private static final String FIND_USER_BY_USERNAME = "SELECT username, birthday, email, country, isAdmin from users WHERE username =?";
 
     @Override
-    public boolean isUsernameExists(String username, Connection connection) {
-
+    public boolean isUsernameExists(String username)  {
+        final Connection connection = getConnection();
         log.debug("checking is username exists: {}", username);
         try{
-            final PreparedStatement preparedStatement = connection.prepareStatement(USERNAME_CHECK_QUERY);
+          @Cleanup  final PreparedStatement preparedStatement = connection.prepareStatement(USERNAME_CHECK_QUERY);
 
             preparedStatement.setString(1, username);
             @Cleanup final ResultSet resultSet = preparedStatement.executeQuery();
+            connection.commit();
             return resultSet.next();
 
         } catch (SQLException ex) {
+            try {
+                connection.rollback();
+            } catch (SQLException e) {
+                log.error("error in transaction rollback process {1}",e);
+            }
             log.error("An error occurred when we checking is username exists: {}", ex.getSQLState());
             throw new ServerSideException();
         }
     }
 
     @Override
-    public void register(RegistrationRequest registrationRequest, Connection connection) {
+    public void register(RegistrationRequest registrationRequest) {
+        final Connection connection = getConnection();
         log.debug("trying to register: {}", registrationRequest);
-        if (isUsernameExists(registrationRequest.getUsername(),connection)) {
+        if (isUsernameExists(registrationRequest.getUsername())) {
             throw new UsernameAlreadyExists();
         }
 
@@ -91,7 +98,13 @@ public class UserDaoJDBCImpl implements UserDao {
             preparedStatement.setString(5, registrationRequest.getCountry());
             preparedStatement.execute();
             log.debug("successfully registered: {}", registrationRequest);
+            connection.commit();
         } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                log.error("error in transaction rollback process {1}",e);
+            }
             log.error("An error occurred in registration process: {}", e.getSQLState());
             throw new ServerSideException();
 
@@ -99,7 +112,8 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     @Override
-    public User login(LoginRequest loginRequest, Connection connection) throws InvalidCredentialsException {
+    public User login(LoginRequest loginRequest) throws InvalidCredentialsException {
+        final Connection connection = getConnection();
         log.debug("login: {}", loginRequest);
         try (final PreparedStatement preparedStatement = connection.prepareStatement(LOGIN_QUERY)) {
 
@@ -113,23 +127,29 @@ public class UserDaoJDBCImpl implements UserDao {
                 final LocalDate birthday = DateConverter.convertDateToLocalDate(resultSet.getDate("birthday"));
                 final String email = resultSet.getString("email");
                 final String country = resultSet.getString("country");
+                connection.commit();
                 return new User(username, birthday, email, country);
             }
 
             throw new InvalidCredentialsException();
         } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                log.error("error in transaction rollback process {1}",e);
+            }
             log.error("An error occurred in login process: {}", e.getSQLState());
             throw new ServerSideException();
         }
     }
 
     @Override
-    public Boolean isAdmin(String username, Connection connection) {
+    public Boolean isAdmin(String username) {
         log.debug("checking, is user admin: {}", username);
-        if (!isUsernameExists(username,connection)) {
+        if (!isUsernameExists(username)) {
             throw new UsernameNotFountException();
         }
-
+        final Connection connection = getConnection();
         try (final PreparedStatement preparedStatement = connection.prepareStatement(IS_ADMIN_QUERY)) {
 
             preparedStatement.setString(1, username);
@@ -145,9 +165,10 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     @Override
-    public void changeAdminState(String username, boolean adminState, Connection connection) throws SQLException {
+    public void changeAdminState(String username, boolean adminState) throws SQLException {
+        final Connection connection = getConnection();
         log.debug("changing admin state of user: {}", username);
-        if (!isUsernameExists(username,connection)) {
+        if (!isUsernameExists(username)) {
             throw new UsernameNotFountException();
         }
         try (final PreparedStatement preparedStatement = connection.prepareStatement(CHANGE_ADMIN_QUERY)) {
@@ -157,6 +178,7 @@ public class UserDaoJDBCImpl implements UserDao {
             preparedStatement.execute();
             connection.commit();
         } catch (SQLException e) {
+            connection.rollback();
             connection.close();
             log.error("An error occurred in admin state changing process: {}", e.getSQLState());
             throw new ServerSideException();
@@ -164,9 +186,10 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     @Override
-    public void updatePassword(LoginRequest userCredentials, String newPassword, Connection connection) throws InvalidCredentialsException {
+    public void updatePassword(LoginRequest userCredentials, String newPassword) throws InvalidCredentialsException {
+        final Connection connection = getConnection();
         log.debug("changing password for {}", userCredentials.getUsername());
-        if (!isUsernameExists(userCredentials.getUsername(),connection)) {
+        if (!isUsernameExists(userCredentials.getUsername())) {
             throw new UsernameNotFountException();
         }
 
@@ -183,20 +206,26 @@ public class UserDaoJDBCImpl implements UserDao {
                 updatePasswordStatement.setString(1, newPassword);
                 updatePasswordStatement.setString(2, userCredentials.getUsername());
                 updatePasswordStatement.executeUpdate();
-
+            connection.commit();
             } else {
                 throw new InvalidCredentialsException();
             }
         } catch (SQLException ex) {
+            try {
+                connection.rollback();
+            } catch (SQLException e) {
+                log.error("error in transaction rollback process {1}",e);
+            }
             log.error("An error occurred in login process: {}", ex.getSQLState());
             throw new ServerSideException();
         }
     }
 
     @Override
-    public void updateUserInfo(User user, Connection connection) {
+    public void updateUserInfo(User user) {
+        final Connection connection = getConnection();
         log.debug("updating user info: {}", user.getUsername());
-        if (!isUsernameExists(user.getUsername(),connection)) {
+        if (!isUsernameExists(user.getUsername())) {
             throw new UsernameNotFountException();
         }
         try (final PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_USER);) {
@@ -207,7 +236,13 @@ public class UserDaoJDBCImpl implements UserDao {
             preparedStatement.setString(3, user.getCountry());
             preparedStatement.setString(4, user.getUsername());
             preparedStatement.executeUpdate();
+            connection.commit();
         } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                log.error("error in transaction rollback process {1}",e);
+            }
             log.error("An error occurred in login process: {}", e.getSQLState());
             throw new ServerSideException();
         }
@@ -215,9 +250,10 @@ public class UserDaoJDBCImpl implements UserDao {
 
 
     @Override
-    public User findByUsername(String username, Connection connection) {
+    public User findByUsername(String username) {
+        final Connection connection = getConnection();
         log.debug("searching user by username: {}", username);
-        if (!isUsernameExists(username,connection)) {
+        if (!isUsernameExists(username)) {
             throw new UsernameNotFountException();
         }
         try (final PreparedStatement preparedStatement = connection.prepareStatement(FIND_USER_BY_USERNAME)) {
@@ -242,7 +278,8 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     @Override
-    public List<User> findAll(Connection connection) {
+    public List<User> findAll() {
+        final Connection connection = getConnection();
         log.debug("find all users id db");
         final List<User> users = new ArrayList<>();
 
@@ -267,9 +304,10 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     @Override
-    public void remove(String username, Connection connection) {
+    public void remove(String username) {
+        final Connection connection = getConnection();
         log.debug("deleting user: {}", username);
-        if (!isUsernameExists(username,connection)) {
+        if (!isUsernameExists(username)) {
             throw new UsernameNotFountException();
         }
 
@@ -278,9 +316,28 @@ public class UserDaoJDBCImpl implements UserDao {
             preparedStatement.setString(1, username);
             preparedStatement.execute();
             log.debug("user {} deleted", username);
+            connection.commit();
         } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                log.error("error in transaction rollback process {1}",e);
+            }
             log.error("An error occurred in login process: {}", e.getSQLState());
             throw new ServerSideException();
+        }
+    }
+
+    private Connection getConnection() {
+        log.debug("creating new connection");
+        try{
+            final Connection connection = mySqlDataSource.getConnection();
+            connection.setAutoCommit(false);
+            log.debug("connection created - {}",connection.toString());
+            return connection;
+        } catch (SQLException e) {
+            log.debug("an exception threw in connection creating step - {1}", e);
+            throw new ServerSideException(e);
         }
     }
 }

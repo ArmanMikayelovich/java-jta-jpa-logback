@@ -14,7 +14,7 @@ import java.io.IOException;
 
 @Slf4j
 public class ChangePassword extends HttpServlet {
-    private final UserService userService =UserServiceWithJTA.getInstance();
+    private final UserService userService =UserService.getInstance();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -25,7 +25,7 @@ public class ChangePassword extends HttpServlet {
         if (newPassword.length() < 8 || newPassword.length() > 25) {
 
             req.setAttribute("newPassword", "password should be between 8-25 characters:");
-            req.getRequestDispatcher("/user/changePassword.jsp").forward(req, resp);
+            req.getRequestDispatcher(req.getContextPath()+"/user/changePassword.jsp").forward(req, resp);
             return;
         }
 
@@ -36,7 +36,7 @@ public class ChangePassword extends HttpServlet {
             log.debug("changed password of user {} to {}", username, newPassword);
         } catch (InvalidCredentialsException ex) {
             req.setAttribute("password", "Wrong password, please try again");
-            req.getRequestDispatcher("/user/changePassword.jsp").forward(req, resp);
+            req.getRequestDispatcher(req.getContextPath()+"/user/changePassword.jsp").forward(req, resp);
         }
 
     }

@@ -17,11 +17,11 @@ import java.time.format.DateTimeParseException;
 import java.util.Set;
 @Slf4j
 public class Register extends HttpServlet {
-    private final UserService userService = UserServiceWithJTA.getInstance();
+    private final UserService userService = UserService.getInstance();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        resp.sendRedirect("/registration.jsp");
+        resp.sendRedirect(req.getContextPath()+"/registration.jsp");
     }
 
     /**
@@ -52,7 +52,7 @@ public class Register extends HttpServlet {
         final Set<ConstraintViolation<RegistrationRequest>> constraintViolations =
                 Validator.validate(registrationRequest);
 
-        if (!constraintViolations.isEmpty()) {
+        if (!constraintViolations.isEmpty() || userService.isUsernameExists(username)) {
             for (ConstraintViolation<RegistrationRequest> violation : constraintViolations) {
                 req.setAttribute(violation.getPropertyPath().toString(), violation.getMessage());
             }
@@ -65,7 +65,7 @@ public class Register extends HttpServlet {
             return;
         }
         userService.register(registrationRequest);
-        resp.sendRedirect("/login.jsp");
+        resp.sendRedirect(req.getContextPath()+"/login.jsp");
         log.debug("Successfully registered User : " + registrationRequest.toString());
     }
 }
