@@ -4,6 +4,7 @@ import com.energizeglobal.internship.util.exception.IllegalAccessException;
 import com.energizeglobal.internship.util.exception.*;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.ejb.EJBException;
 import javax.ejb.EJBTransactionRolledbackException;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -30,7 +31,7 @@ public class ErrorHandlerServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Throwable throwable = (Throwable) req.getAttribute(RequestDispatcher.ERROR_EXCEPTION);
         final Class<? extends Throwable> exceptionClass;
-        if (throwable instanceof EJBTransactionRolledbackException) {
+        if (throwable instanceof EJBTransactionRolledbackException || throwable instanceof EJBException) {
             exceptionClass = throwable.getCause().getClass();
         } else {
             exceptionClass = (Class<? extends Throwable>) req.getAttribute("javax.servlet.error.exception_type");
@@ -42,7 +43,7 @@ public class ErrorHandlerServlet extends HttpServlet {
 
                 log.debug("Handled InvalidCredentialsException and redirected to /login.jsp?error=true");
                 resp.setStatus(BAD_REQUEST);
-                req.getRequestDispatcher(req.getContextPath() + "/frontErrors.jsp").forward(req, resp);
+                req.getRequestDispatcher( "/login.jsp?error=true").forward(req, resp);
                 log.debug(exceptionClass.toString() + " handled");
 
             } else if (exceptionClass.equals(IllegalAccessException.class)) {

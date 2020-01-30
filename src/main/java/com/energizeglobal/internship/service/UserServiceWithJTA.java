@@ -14,7 +14,6 @@ import javax.ejb.Stateless;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
 import javax.transaction.*;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -33,24 +32,8 @@ public class UserServiceWithJTA implements UserService {
 
     @Override
     public boolean isUsernameExists(String username) {
-        log.debug("starting transaction for checking is username exists");
-        try {
-            tx.begin();
-                boolean usernameExists = userDao.isUsernameExists(username);
-                tx.commit();
-                log.debug("transaction successfully finished");
-                return usernameExists;
-
-        } catch (NotSupportedException | SystemException  | ServerSideException
-                | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
-            log.debug("error in transaction.");
-            try {
-                tx.rollback();
-            } catch (SystemException ex) {
-                throw new ServerSideException(ex);
-            }
-            throw new ServerSideException(e);
-        }
+        log.debug("start checking is username exists");
+        return userDao.isUsernameExists(username);
 
     }
 
@@ -59,10 +42,10 @@ public class UserServiceWithJTA implements UserService {
         try {
             tx.begin();
 
-                userDao.register(registrationRequest);
+            userDao.register(registrationRequest);
 
-                tx.commit();
-                log.debug("transaction successfully finished");
+            tx.commit();
+            log.debug("transaction successfully finished");
 
         } catch (NotSupportedException | SystemException | ServerSideException |
                 RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
@@ -78,49 +61,18 @@ public class UserServiceWithJTA implements UserService {
 
     @Override
     public User login(LoginRequest loginRequest) {
-        log.debug("starting transaction for login processing");
-        try {
-            tx.begin();
-
-                final User user = userDao.login(loginRequest);
-
-                tx.commit();
-                log.debug("transaction successfully finished");
-                return user;
-
-        } catch (NotSupportedException | SystemException | ServerSideException
-                | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
-            log.debug("error in transaction.");
-            try {
-                tx.rollback();
-            } catch (SystemException ex) {
-                throw new ServerSideException(ex);
-            }
-            throw new ServerSideException(e);
-        }
+        log.debug("starting  login processing");
+        final User user = userDao.login(loginRequest);
+        return user;
     }
 
     @Override
     public Boolean isAdmin(String username) {
         log.debug("starting transaction for checking user's isAdmin ");
-        try {
-            tx.begin();
 
-            final Boolean isAdmin = userDao.isAdmin(username);
-            tx.commit();
-            log.debug("transaction successfully finished");
-            return isAdmin;
-
-        } catch (NotSupportedException | SystemException | ServerSideException
-                | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
-            log.debug("error in transaction.");
-            try {
-                tx.rollback();
-            } catch (SystemException ex) {
-                throw new ServerSideException(ex);
-            }
-            throw new ServerSideException(e);
-        }
+        final Boolean isAdmin = userDao.isAdmin(username);
+        log.debug("transaction successfully finished");
+        return isAdmin;
     }
 
     @Override
@@ -186,46 +138,14 @@ public class UserServiceWithJTA implements UserService {
 
     @Override
     public List<User> findAll() {
-        log.debug("starting transaction for getting all users");
-        try {
-            tx.begin();
-            final List<User> allUsers = userDao.findAll();
-            tx.commit();
-            log.debug("transaction successfully finished");
-            return allUsers;
-
-        } catch (NotSupportedException | SystemException | ServerSideException
-                | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
-            log.debug("error in transaction.");
-            try {
-                tx.rollback();
-            } catch (SystemException ex) {
-                throw new ServerSideException(ex);
-            }
-            throw new ServerSideException(e);
-        }
+        log.debug("starting  getting all users");
+            return  userDao.findAll();
     }
 
     @Override
     public User findByUsername(String username) {
-        log.debug("starting transaction for finding by username");
-        try {
-            tx.begin();
-            final User user = userDao.findByUsername(username);
-            tx.commit();
-            log.debug("transaction successfully finished");
-            return user;
-
-        } catch (NotSupportedException | SystemException | ServerSideException
-                | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
-            log.debug("error in transaction.");
-            try {
-                tx.rollback();
-            } catch (SystemException ex) {
-                throw new ServerSideException(ex);
-            }
-            throw new ServerSideException(e);
-        }
+        log.debug("start for finding by username");
+        return userDao.findByUsername(username);
     }
 
     @Override

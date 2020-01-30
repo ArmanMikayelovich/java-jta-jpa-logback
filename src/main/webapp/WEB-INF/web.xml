@@ -114,29 +114,33 @@
         <servlet-name>ErrorServlet</servlet-name>
         <url-pattern>/error</url-pattern>
     </servlet-mapping>
-    <error-page>
-        <exception-type>com.energizeglobal.internship.util.exception.InvalidCredentialsException</exception-type>
-        <location>/error</location>
-    </error-page>
-    <error-page>
-        <exception-type>com.energizeglobal.internship.util.exception.IllegalAccessException</exception-type>
-        <location>/error</location>
-    </error-page>
-    <error-page>
-        <exception-type>com.energizeglobal.internship.util.exception.ServerSideException</exception-type>
-        <location>/error</location>
-    </error-page>
-    <error-page>
-        <exception-type>com.energizeglobal.internship.util.exception.UsernameNotFountException</exception-type>
-        <location>/error</location>
-    </error-page>
+<!--    <error-page>-->
+<!--        <exception-type>com.energizeglobal.internship.util.exception.InvalidCredentialsException</exception-type>-->
+<!--        <location>/error</location>-->
+<!--    </error-page>-->
+<!--    <error-page>-->
+<!--        <exception-type>com.energizeglobal.internship.util.exception.IllegalAccessException</exception-type>-->
+<!--        <location>/error</location>-->
+<!--    </error-page>-->
+<!--    <error-page>-->
+<!--        <exception-type>com.energizeglobal.internship.util.exception.ServerSideException</exception-type>-->
+<!--        <location>/error</location>-->
+<!--    </error-page>-->
+<!--    <error-page>-->
+<!--        <exception-type>com.energizeglobal.internship.util.exception.UsernameNotFountException</exception-type>-->
+<!--        <location>/error</location>-->
+<!--    </error-page>-->
 
+<!--    <error-page>-->
+<!--        <exception-type>com.energizeglobal.internship.util.exception.UnAuthenticatedException</exception-type>-->
+<!--        <location>/error</location>-->
+<!--    </error-page>-->
+<!--    <error-page>-->
+<!--        <exception-type>com.energizeglobal.internship.util.exception.UnAuthorizedException</exception-type>-->
+<!--        <location>/error</location>-->
+<!--    </error-page>-->
     <error-page>
-        <exception-type>com.energizeglobal.internship.util.exception.UnAuthenticatedException</exception-type>
-        <location>/error</location>
-    </error-page>
-    <error-page>
-        <exception-type>com.energizeglobal.internship.util.exception.UnAuthorizedException</exception-type>
+        <exception-type>java.lang.Throwable</exception-type>
         <location>/error</location>
     </error-page>
 
