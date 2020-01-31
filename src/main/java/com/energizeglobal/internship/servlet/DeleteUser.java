@@ -27,7 +27,8 @@ public class DeleteUser extends HttpServlet {
             log.debug(" user deleted {}", deletingUsername);
         } else if (userService.isAdmin(loggedInUsername)) {
             userService.remove(deletingUsername);
-            resp.sendRedirect(req.getContextPath()+"/admin/adminPage.jsp");
+            resp.sendRedirect(req.getContextPath() + "/admin/adminPage.jsp");
+            log.debug(" admin: {} delete user: {}", loggedInUsername,deletingUsername);
         } else {
             log.debug(" cant delete user {}", deletingUsername);
             throw new IllegalAccessException();

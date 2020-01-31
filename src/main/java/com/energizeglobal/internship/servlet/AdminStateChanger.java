@@ -1,7 +1,6 @@
 package com.energizeglobal.internship.servlet;
 
 import com.energizeglobal.internship.service.UserService;
-import com.energizeglobal.internship.service.UserServiceWithJTA;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.ServletException;
@@ -19,17 +18,18 @@ public class AdminStateChanger extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        log.debug("Accepted request to AdminStateChanger servlet : " + req.getParameterMap().toString() + "\n" + req.getParameterMap().toString());
+        log.debug("Accepted request to AdminStateChanger servlet : {}", req.getParameterMap().toString());
         final String username = req.getParameter("username");
         final String isAdminString = req.getParameter("isAdmin");
         final boolean isAdmin = Boolean.parseBoolean(isAdminString);
         userService.changeAdminState(username, isAdmin);
-        resp.sendRedirect(req.getContextPath()+"/admin/adminPage.jsp");
+        log.debug("changed {} users's admin flag to {}",username,isAdmin);
+        resp.sendRedirect(req.getContextPath() + "/admin/adminPage.jsp");
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         log.debug("redirected from AdminStateChanger servlet to /admin/adminPage.js");
-        resp.sendRedirect(req.getContextPath()+"/admin/adminPage.jsp");
+        resp.sendRedirect(req.getContextPath() + "/admin/adminPage.jsp");
     }
 }

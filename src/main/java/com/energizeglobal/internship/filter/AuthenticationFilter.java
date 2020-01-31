@@ -19,6 +19,7 @@ public class AuthenticationFilter implements Filter {
 
         HttpServletRequest req = (HttpServletRequest) servletRequest;
         if (req.getSession(false) == null || req.getSession().getAttribute("username") == null) {
+
             throw new UnAuthenticatedException();
         }
         filterChain.doFilter(servletRequest, servletResponse);

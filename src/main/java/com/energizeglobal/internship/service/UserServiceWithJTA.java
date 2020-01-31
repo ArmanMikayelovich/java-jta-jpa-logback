@@ -41,6 +41,7 @@ public class UserServiceWithJTA implements UserService {
     public void register(RegistrationRequest registrationRequest) {
         try {
             tx.begin();
+            log.debug("transaction {} started", tx);
 
             userDao.register(registrationRequest);
 
@@ -49,12 +50,9 @@ public class UserServiceWithJTA implements UserService {
 
         } catch (NotSupportedException | SystemException | ServerSideException |
                 RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
-            log.debug("error in transaction.");
-            try {
-                tx.rollback();
-            } catch (SystemException ex) {
-                throw new ServerSideException(ex);
-            }
+
+            log.debug("error in transaction: {}, error message: {}", tx, e.getMessage());
+            rollBackTransaction(tx);
             throw new ServerSideException(e);
         }
     }
@@ -62,16 +60,16 @@ public class UserServiceWithJTA implements UserService {
     @Override
     public User login(LoginRequest loginRequest) {
         log.debug("starting  login processing");
-        final User user = userDao.login(loginRequest);
-        return user;
+        return userDao.login(loginRequest);
     }
 
     @Override
     public Boolean isAdmin(String username) {
-        log.debug("starting transaction for checking user's isAdmin ");
+        log.debug("start checking user's isAdmin flag");
 
         final Boolean isAdmin = userDao.isAdmin(username);
-        log.debug("transaction successfully finished");
+
+        log.debug("user's   isAdmin flag checking finished");
         return isAdmin;
     }
 
@@ -85,12 +83,8 @@ public class UserServiceWithJTA implements UserService {
             log.debug("transaction successfully finished");
         } catch (NotSupportedException | SystemException | SQLException | ServerSideException
                 | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
-            log.debug("error in transaction.");
-            try {
-                tx.rollback();
-            } catch (SystemException ex) {
-                throw new ServerSideException(ex);
-            }
+            log.debug("error in transaction: {}, error message: {}", tx, e.getMessage());
+            rollBackTransaction(tx);
             throw new ServerSideException(e);
         }
     }
@@ -106,12 +100,8 @@ public class UserServiceWithJTA implements UserService {
 
         } catch (NotSupportedException | SystemException | ServerSideException
                 | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
-            log.debug("error in transaction.");
-            try {
-                tx.rollback();
-            } catch (SystemException ex) {
-                throw new ServerSideException(ex);
-            }
+            log.debug("error in transaction: {}, error message: {}", tx, e.getMessage());
+            rollBackTransaction(tx);
             throw new ServerSideException(e);
         }
     }
@@ -126,12 +116,8 @@ public class UserServiceWithJTA implements UserService {
             log.debug("transaction successfully finished");
         } catch (NotSupportedException | SystemException | ServerSideException
                 | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
-            log.debug("error in transaction.");
-            try {
-                tx.rollback();
-            } catch (SystemException ex) {
-                throw new ServerSideException(ex);
-            }
+            log.debug("error in transaction: {}, error message: {}", tx, e.getMessage());
+            rollBackTransaction(tx);
             throw new ServerSideException(e);
         }
     }
@@ -139,7 +125,7 @@ public class UserServiceWithJTA implements UserService {
     @Override
     public List<User> findAll() {
         log.debug("starting  getting all users");
-            return  userDao.findAll();
+        return userDao.findAll();
     }
 
     @Override
@@ -159,15 +145,20 @@ public class UserServiceWithJTA implements UserService {
 
         } catch (NotSupportedException | SystemException | ServerSideException
                 | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
-            log.debug("error in transaction.");
-            try {
-                tx.rollback();
-            } catch (SystemException ex) {
-                throw new ServerSideException(ex);
-            }
+            log.debug("error in transaction: {}, error message: {}", tx, e.getMessage());
+            rollBackTransaction(tx);
             throw new ServerSideException(e);
         }
     }
 
+    private void rollBackTransaction(UserTransaction tx) {
+        try {
+            log.info("rolling back the transaction {}", tx);
+            tx.rollback();
+        } catch (SystemException ex) {
+            log.error("Error in transaction's rollback process: {}, message: {}", tx, ex.getMessage());
+            throw new ServerSideException(ex);
+        }
+    }
 
 }
