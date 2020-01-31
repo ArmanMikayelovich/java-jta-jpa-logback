@@ -15,6 +15,7 @@ import javax.validation.ConstraintViolation;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.Map;
 import java.util.Set;
 @Slf4j
 public class UserInfoChanger extends HttpServlet {
@@ -49,15 +50,12 @@ public class UserInfoChanger extends HttpServlet {
         final String country = req.getParameter("country");
         final User userToUpdate = new User(username, birthday, email, country);
 
-        final Set<ConstraintViolation<User>> constraintViolations = Validator.validate(userToUpdate);
+        final Map<String,String> complianceErrors =
+                Validator.validate(userToUpdate);
 
-        if (!constraintViolations.isEmpty()) {
-            for (ConstraintViolation<User> violation : constraintViolations) {
-                req.setAttribute(violation.getPropertyPath().toString(), violation.getMessage());
-            }
-
-            if (userService.isUsernameExists(username)) {
-                req.setAttribute("username", "Username already exists");
+        if (!complianceErrors.isEmpty()) {
+            for (Map.Entry<String, String> entry : complianceErrors.entrySet()) {
+                req.setAttribute(entry.getKey(), entry.getValue());
             }
             req.getRequestDispatcher("/user/changeUser.jsp").forward(req, resp);
             log.debug("cant change user {} info.",username);

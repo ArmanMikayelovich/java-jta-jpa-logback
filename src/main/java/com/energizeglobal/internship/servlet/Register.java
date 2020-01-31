@@ -14,6 +14,7 @@ import javax.validation.ConstraintViolation;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.Map;
 import java.util.Set;
 @Slf4j
 public class Register extends HttpServlet {
@@ -49,12 +50,12 @@ public class Register extends HttpServlet {
         final RegistrationRequest registrationRequest =
                 new RegistrationRequest(username, password, birthday, email, country);
 
-        final Set<ConstraintViolation<RegistrationRequest>> constraintViolations =
+        final Map<String,String> complianceErrors =
                 Validator.validate(registrationRequest);
 
-        if (!constraintViolations.isEmpty() || userService.isUsernameExists(username)) {
-            for (ConstraintViolation<RegistrationRequest> violation : constraintViolations) {
-                req.setAttribute(violation.getPropertyPath().toString(), violation.getMessage());
+        if (!complianceErrors.isEmpty() || userService.isUsernameExists(username)) {
+            for (Map.Entry<String, String> entry : complianceErrors.entrySet()) {
+                req.setAttribute(entry.getKey(), entry.getValue());
             }
 
             if (userService.isUsernameExists(username)) {

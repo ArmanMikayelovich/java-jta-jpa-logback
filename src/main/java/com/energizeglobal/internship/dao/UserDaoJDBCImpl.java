@@ -62,14 +62,11 @@ public class UserDaoJDBCImpl implements UserDao {
     public boolean isUsernameExists(String username)  {
         final Connection connection = getConnection();
         log.debug("checking is username exists: {}", username);
-        try{
-          @Cleanup  final PreparedStatement preparedStatement = connection.prepareStatement(USERNAME_CHECK_QUERY);
-
+        try(final PreparedStatement preparedStatement = connection.prepareStatement(USERNAME_CHECK_QUERY);){
             preparedStatement.setString(1, username);
-            @Cleanup final ResultSet resultSet = preparedStatement.executeQuery();
+            final ResultSet resultSet = preparedStatement.executeQuery();
             connection.commit();
             return resultSet.next();
-
         } catch (SQLException ex) {
             try {
                 connection.rollback();
