@@ -9,7 +9,6 @@ import com.energizeglobal.internship.util.exception.InvalidCredentialsException;
 import com.energizeglobal.internship.util.exception.ServerSideException;
 import com.energizeglobal.internship.util.exception.UsernameAlreadyExists;
 import com.energizeglobal.internship.util.exception.UsernameNotFountException;
-import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ejb.Stateless;
@@ -47,96 +46,115 @@ public class UserDaoJDBCImpl implements UserDao {
             "WHERE username=? AND password=?";
     private static final String IS_ADMIN_QUERY = "SELECT isAdmin FROM users WHERE username=?";
 
-    private static final String CHANGE_ADMIN_QUERY = "UPDATE users SET isAdmin = ? WHERE username=?";
+    private static final String CHANGE_ADMIN_STATE_QUERY = "UPDATE users SET isAdmin = ? WHERE username=?";
 
-    private static final String FIND_ALL_USERS = "SELECT username, birthday, email, country, isAdmin FROM users";
+    private static final String FIND_ALL_USERS_QUERY = "SELECT username, birthday, email, country, isAdmin FROM users";
 
     private static final String DELETE_QUERY = "DELETE FROM users WHERE username = ?";
 
     private static final String GET_PASSWORD = "SELECT password FROM users WHERE username = ?";
-    private static final String UPDATE_PASSWORD = "UPDATE users SET password =? WHERE username=?";
+    private static final String UPDATE_PASSWORD_QUERY = "UPDATE users SET password =? WHERE username=?";
     private static final String UPDATE_USER = "UPDATE users SET birthday=?, email=?, country =? WHERE username=?";
     private static final String FIND_USER_BY_USERNAME = "SELECT username, birthday, email, country, isAdmin from users WHERE username =?";
 
     @Override
-    public boolean isUsernameExists(String username)  {
+    public boolean isUsernameExists(String username) {
+
         final Connection connection = getConnection();
         log.debug("checking is username exists: {}", username);
-        try(final PreparedStatement preparedStatement = connection.prepareStatement(USERNAME_CHECK_QUERY);){
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+
+        try {
+
+            preparedStatement = connection.prepareStatement(USERNAME_CHECK_QUERY);
             preparedStatement.setString(1, username);
-            final ResultSet resultSet = preparedStatement.executeQuery();
-            connection.commit();
+            resultSet = preparedStatement.executeQuery();
             return resultSet.next();
+
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                log.error("error in transaction rollback process {1}",e);
-            }
-            log.error("An error occurred when we checking is username exists: {}", ex.getSQLState());
+
+            log.error("An error occurred when we checking is username exists: {}, \n error message: {}, \n query is: {}"
+                    , ex.getSQLState(), ex.getMessage(), USERNAME_CHECK_QUERY);
             throw new ServerSideException();
+
+        } finally {
+            closeResultSet(resultSet);
+            closePreparedStatement(preparedStatement);
         }
     }
 
     @Override
     public void register(RegistrationRequest registrationRequest) {
-        final Connection connection = getConnection();
         log.debug("trying to register: {}", registrationRequest);
         if (isUsernameExists(registrationRequest.getUsername())) {
             throw new UsernameAlreadyExists();
         }
+        final Connection connection = getConnection();
+        PreparedStatement preparedStatement = null;
 
-        try (final PreparedStatement preparedStatement = connection.prepareStatement(REGISTER_QUERY);) {
+        try {
 
+            preparedStatement = connection.prepareStatement(REGISTER_QUERY);
             preparedStatement.setString(1, registrationRequest.getUsername());
             preparedStatement.setString(2, registrationRequest.getPassword());
             preparedStatement.setDate(3, convertLocalDateToSqlDate(registrationRequest.getBirthday()));
             preparedStatement.setString(4, registrationRequest.getEmail());
             preparedStatement.setString(5, registrationRequest.getCountry());
             preparedStatement.execute();
+
             log.debug("successfully registered: {}", registrationRequest);
             connection.commit();
-        } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                log.error("error in transaction rollback process {1}",e);
-            }
-            log.error("An error occurred in registration process: {}", e.getSQLState());
-            throw new ServerSideException();
 
+        } catch (SQLException e) {
+            rollBackConnection(connection);
+            log.error("An error occurred in registration process: {}, \n query is: {}, registrationRequest is: {}"
+                    , e.getSQLState(), REGISTER_QUERY, registrationRequest);
+            throw new ServerSideException(e);
+
+        } finally {
+            closePreparedStatement(preparedStatement);
+            closeConnection(connection);
         }
     }
 
     @Override
-    public User login(LoginRequest loginRequest) throws InvalidCredentialsException {
-        final Connection connection = getConnection();
+    public User login(LoginRequest loginRequest) {
         log.debug("login: {}", loginRequest);
-        try (final PreparedStatement preparedStatement = connection.prepareStatement(LOGIN_QUERY)) {
 
+        final Connection connection = getConnection();
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+
+        try {
+            preparedStatement = connection.prepareStatement(LOGIN_QUERY);
             preparedStatement.setString(1, loginRequest.getUsername());
             preparedStatement.setString(2, loginRequest.getPassword());
 
-            @Cleanup final ResultSet resultSet = preparedStatement.executeQuery();
+            resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
+
                 final String username = resultSet.getString("username");
                 final LocalDate birthday = DateConverter.convertDateToLocalDate(resultSet.getDate("birthday"));
                 final String email = resultSet.getString("email");
                 final String country = resultSet.getString("country");
-                connection.commit();
                 return new User(username, birthday, email, country);
             }
 
             throw new InvalidCredentialsException();
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                log.error("error in transaction rollback process {1}",e);
-            }
-            log.error("An error occurred in login process: {}", e.getSQLState());
+
+            rollBackConnection(connection);
+            log.error("An error occurred in login process: {}, query: {}", e.getSQLState(), LOGIN_QUERY);
             throw new ServerSideException();
+
+        } finally {
+
+            closeResultSet(resultSet);
+            closePreparedStatement(preparedStatement);
+            closeConnection(connection);
+
         }
     }
 
@@ -146,87 +164,130 @@ public class UserDaoJDBCImpl implements UserDao {
         if (!isUsernameExists(username)) {
             throw new UsernameNotFountException();
         }
-        final Connection connection = getConnection();
-        try (final PreparedStatement preparedStatement = connection.prepareStatement(IS_ADMIN_QUERY)) {
 
+        final Connection connection = getConnection();
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+
+        try {
+            preparedStatement = connection.prepareStatement(IS_ADMIN_QUERY);
             preparedStatement.setString(1, username);
-            @Cleanup ResultSet resultSet = preparedStatement.executeQuery();
+            resultSet = preparedStatement.executeQuery();
             resultSet.next();
             log.debug("is user {} admin : {}", username, resultSet.getBoolean("isAdmin"));
             return resultSet.getBoolean("isAdmin");
 
         } catch (SQLException e) {
+
             log.error("An error occurred in login process: {}", e.getSQLState());
             throw new ServerSideException();
+
+        } finally {
+            closeResultSet(resultSet);
+            closePreparedStatement(preparedStatement);
+            closeConnection(connection);
         }
     }
 
     @Override
-    public void changeAdminState(String username, boolean adminState) throws SQLException {
+    public void changeAdminState(String username, boolean adminState) {
         final Connection connection = getConnection();
         log.debug("changing admin state of user: {}", username);
         if (!isUsernameExists(username)) {
             throw new UsernameNotFountException();
         }
-        try (final PreparedStatement preparedStatement = connection.prepareStatement(CHANGE_ADMIN_QUERY)) {
 
+        PreparedStatement preparedStatement = null;
+        try {
+            preparedStatement = connection.prepareStatement(CHANGE_ADMIN_STATE_QUERY);
             preparedStatement.setBoolean(1, adminState);
             preparedStatement.setString(2, username);
             preparedStatement.execute();
             connection.commit();
+
         } catch (SQLException e) {
-            connection.rollback();
-            connection.close();
-            log.error("An error occurred in admin state changing process: {}", e.getSQLState());
-            throw new ServerSideException();
+
+            rollBackConnection(connection);
+            log.error("An error occurred in admin state changing process: {},query is: {}",
+                    e.getSQLState(), CHANGE_ADMIN_STATE_QUERY);
+            throw new ServerSideException(e);
+
+        } finally {
+
+            closePreparedStatement(preparedStatement);
+            closeConnection(connection);
         }
     }
 
     @Override
-    public void updatePassword(LoginRequest userCredentials, String newPassword) throws InvalidCredentialsException {
-        final Connection connection = getConnection();
+    public void updatePassword(LoginRequest userCredentials, String newPassword) {
         log.debug("changing password for {}", userCredentials.getUsername());
+
         if (!isUsernameExists(userCredentials.getUsername())) {
             throw new UsernameNotFountException();
         }
 
-        try (final PreparedStatement preparedStatement = connection.prepareStatement(GET_PASSWORD)) {
+        final Connection connection = getConnection();
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+        try {
 
+            preparedStatement = connection.prepareStatement(GET_PASSWORD);
             preparedStatement.setString(1, userCredentials.getUsername());
-            final ResultSet resultSet = preparedStatement.executeQuery();
+            resultSet = preparedStatement.executeQuery();
             resultSet.next();
+
             final String password = resultSet.getString("password");
 
             if (userCredentials.getPassword().equals(password)) {
+                changePassword(userCredentials.getUsername(), newPassword, connection);
 
-                @Cleanup final PreparedStatement updatePasswordStatement = connection.prepareStatement(UPDATE_PASSWORD);
-                updatePasswordStatement.setString(1, newPassword);
-                updatePasswordStatement.setString(2, userCredentials.getUsername());
-                updatePasswordStatement.executeUpdate();
-            connection.commit();
             } else {
                 throw new InvalidCredentialsException();
             }
+
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                log.error("error in transaction rollback process {1}",e);
-            }
+
+            rollBackConnection(connection);
             log.error("An error occurred in login process: {}", ex.getSQLState());
             throw new ServerSideException();
+
+        } finally {
+
+            closeResultSet(resultSet);
+            closePreparedStatement(preparedStatement);
+            closeConnection(connection);
+        }
+    }
+
+    private void changePassword(String username, String newPassword, Connection connection) {
+        PreparedStatement updatePasswordStatement = null;
+        try {
+            updatePasswordStatement = connection.prepareStatement(UPDATE_PASSWORD_QUERY);
+            updatePasswordStatement.setString(1, newPassword);
+            updatePasswordStatement.setString(2, username);
+            updatePasswordStatement.executeUpdate();
+            connection.commit();
+        } catch (SQLException e) {
+            log.error("An error accured in password changing process " +
+                            ": {}, query is: {}, username: {} , new password:{} "
+                    , e.getMessage(), UPDATE_PASSWORD_QUERY, username, newPassword);
+        } finally {
+            closePreparedStatement(updatePasswordStatement);
         }
     }
 
     @Override
     public void updateUserInfo(User user) {
-        final Connection connection = getConnection();
         log.debug("updating user info: {}", user.getUsername());
         if (!isUsernameExists(user.getUsername())) {
             throw new UsernameNotFountException();
         }
-        try (final PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_USER);) {
+        final Connection connection = getConnection();
+        PreparedStatement preparedStatement = null;
+        try {
 
+            preparedStatement = connection.prepareStatement(UPDATE_USER);
 
             preparedStatement.setDate(1, convertLocalDateToSqlDate(user.getBirthday()));
             preparedStatement.setString(2, user.getEmail());
@@ -234,29 +295,36 @@ public class UserDaoJDBCImpl implements UserDao {
             preparedStatement.setString(4, user.getUsername());
             preparedStatement.executeUpdate();
             connection.commit();
+
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                log.error("error in transaction rollback process {1}",e);
-            }
+
+            rollBackConnection(connection);
             log.error("An error occurred in login process: {}", e.getSQLState());
             throw new ServerSideException();
+
+        } finally {
+
+            closePreparedStatement(preparedStatement);
+            closeConnection(connection);
         }
     }
 
 
     @Override
     public User findByUsername(String username) {
-        final Connection connection = getConnection();
         log.debug("searching user by username: {}", username);
         if (!isUsernameExists(username)) {
             throw new UsernameNotFountException();
         }
-        try (final PreparedStatement preparedStatement = connection.prepareStatement(FIND_USER_BY_USERNAME)) {
+        final Connection connection = getConnection();
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
 
+        try {
+
+            preparedStatement = connection.prepareStatement(FIND_USER_BY_USERNAME);
             preparedStatement.setString(1, username);
-            @Cleanup final ResultSet resultSet = preparedStatement.executeQuery();
+            resultSet = preparedStatement.executeQuery();
             resultSet.next();
 
             final String usernameFromDB = resultSet.getString("username");
@@ -265,12 +333,21 @@ public class UserDaoJDBCImpl implements UserDao {
             final String country = resultSet.getString("country");
             final boolean isAdmin = resultSet.getBoolean("isAdmin");
             final User user = new User(usernameFromDB, birthday, email, country, isAdmin);
+
             log.debug("found user: {}", user);
             return user;
 
         } catch (SQLException e) {
-            log.error("An error occurred in login process: {}", e.getSQLState());
-            throw new ServerSideException();
+
+            log.error("An error occurred in login process. SQL state: {}, errorMessage: {}, query: {}",
+                    e.getSQLState(), e.getMessage(), FIND_USER_BY_USERNAME);
+            throw new ServerSideException(e);
+
+        } finally {
+
+            closeResultSet(resultSet);
+            closePreparedStatement(preparedStatement);
+            closeConnection(connection);
         }
     }
 
@@ -279,11 +356,11 @@ public class UserDaoJDBCImpl implements UserDao {
         final Connection connection = getConnection();
         log.debug("find all users id db");
         final List<User> users = new ArrayList<>();
-
-        try (final PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL_USERS)) {
-
-            @Cleanup ResultSet resultSet = preparedStatement.executeQuery();
-
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+        try {
+            preparedStatement = connection.prepareStatement(FIND_ALL_USERS_QUERY);
+            resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
 
                 final String username = resultSet.getString("username");
@@ -293,48 +370,102 @@ public class UserDaoJDBCImpl implements UserDao {
                 final Boolean isAdmin = resultSet.getBoolean("isAdmin");
                 users.add(new User(username, birthday.toLocalDate(), email, country, isAdmin));
             }
+
             log.debug("Found {} users", users.size());
         } catch (SQLException e) {
-            throw new ServerSideException();
+            log.error("An error occurred in findAll() method. SQL state: {}, errorMessage: {}, query: {}"
+                    , e.getSQLState(), e.getMessage(), FIND_ALL_USERS_QUERY);
+            throw new ServerSideException(e);
+        } finally {
+
+            closeResultSet(resultSet);
+            closePreparedStatement(preparedStatement);
+            closeConnection(connection);
         }
         return users;
     }
 
     @Override
     public void remove(String username) {
-        final Connection connection = getConnection();
         log.debug("deleting user: {}", username);
         if (!isUsernameExists(username)) {
             throw new UsernameNotFountException();
         }
-
-        try (final PreparedStatement preparedStatement
-                     = connection.prepareStatement(DELETE_QUERY)) {
+        final Connection connection = getConnection();
+        PreparedStatement preparedStatement = null;
+        try {
+            preparedStatement = connection.prepareStatement(DELETE_QUERY);
             preparedStatement.setString(1, username);
             preparedStatement.execute();
             log.debug("user {} deleted", username);
             connection.commit();
+
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                log.error("error in transaction rollback process {1}",e);
-            }
+           rollBackConnection(connection);
             log.error("An error occurred in login process: {}", e.getSQLState());
             throw new ServerSideException();
+        } finally {
+
+            closePreparedStatement(preparedStatement);
+            closeConnection(connection);
         }
     }
 
     private Connection getConnection() {
         log.debug("creating new connection");
-        try{
+        try {
             final Connection connection = mySqlDataSource.getConnection();
             connection.setAutoCommit(false);
-            log.debug("connection created - {}",connection.toString());
+            log.debug("connection created - {}", connection.toString());
             return connection;
         } catch (SQLException e) {
             log.debug("an exception threw in connection creating step - {1}", e);
             throw new ServerSideException(e);
         }
+    }
+
+    private void closePreparedStatement(PreparedStatement preparedStatement) {
+        if (preparedStatement != null) {
+            try {
+                log.debug("closing preparedStatement {}", preparedStatement);
+                preparedStatement.close();
+            } catch (SQLException e) {
+                log.error("error in closing preparedStatement {}, query is: {}", preparedStatement, REGISTER_QUERY);
+            }
+        }
+    }
+
+    private void closeResultSet(ResultSet resultSet) {
+        if (resultSet != null) {
+            try {
+                resultSet.close();
+            } catch (SQLException e) {
+                log.error("error in closing resultSet {}, \t query is: {},\n sql state : \n {}"
+                        , resultSet, USERNAME_CHECK_QUERY, e.getSQLState());
+            }
+        }
+    }
+
+    private void rollBackConnection(Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException ex) {
+            log.error("error in transaction rollback process {}, \n query is: {}", ex.toString(), REGISTER_QUERY);
+        }
+    }
+
+    private void closeConnection(Connection connection) {
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            try {
+                log.error("error in connection closing process, connection is: {},\n DB meta data: {}"
+                        , connection, connection.getMetaData());
+            } catch (SQLException ex) {
+                log.error("error in connection closing process, connection is: {}" +
+                        "\n and error in DB meta data reading process. {}", connection, ex.getMessage());
+            }
+        }
+
     }
 }

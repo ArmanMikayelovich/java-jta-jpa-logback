@@ -1,6 +1,8 @@
 package com.energizeglobal.internship.model;
 
 import com.energizeglobal.internship.util.Validator;
+import com.energizeglobal.internship.util.annotation.NotInFutureLocalDate;
+import com.energizeglobal.internship.util.annotation.PastYearsRestriction;
 import lombok.Data;
 
 import javax.inject.Singleton;
@@ -16,6 +18,8 @@ public class User {
     private String username;
 
     @NotNull(message = "birthday field should not be empty")
+    @NotInFutureLocalDate(message = "The birthday date should not be in future")
+    @PastYearsRestriction(count=150,message = "The entrance to the historical museum is on the left")
     private LocalDate birthday;
 
     @NotNull(message = "email field should be not empty")

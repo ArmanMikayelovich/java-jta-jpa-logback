@@ -19,7 +19,7 @@ public class RegistrationRequest extends LoginRequest {
 
     @NotNull(message = "birthday field should not be empty")
     @NotInFutureLocalDate(message = "The birthday date should not be in future")
-    @PastYearsRestriction(count=150,message = "The entrance to the 19th century museum is on the left")
+    @PastYearsRestriction(count=150,message = "The entrance to the historical museum is on the left")
     private LocalDate birthday;
 
     @NotNull(message = "email field should be not empty")

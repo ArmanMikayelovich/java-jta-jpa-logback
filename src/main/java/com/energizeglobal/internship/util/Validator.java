@@ -86,7 +86,8 @@ public class Validator {
         }
     }
 
-    private static <T> void getPastYearsRestrictionComplianceErrors(T object, List<Field> fieldList, Map<String, String> errorMap) {
+    private static <T> void getPastYearsRestrictionComplianceErrors(T object, List<Field> fieldList, Map<String,
+            String> errorMap) {
         final Class<PastYearsRestriction> annotationClass = PastYearsRestriction.class;
         for (Field field : fieldList) {
             if (errorMap.containsKey(field.getName())) {
